@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="交互理解扩散语言模型：逐步去噪、与自回归生成的比较、转移核和 Semantic DLM+。">
+<meta name="color-scheme" content="light">
+<title>语言，也可以逐步去噪 · Diffusion Language Lab</title>
+<style>
+:root{--paper:#fbfbf9;--ink:#142e4b;--muted:#56697b;--blue:#20578c;--teal:#087e79;--line:#dce3e8;--soft:#f1f5f8;--purple:#8254a5;--orange:#bd7624;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--paper);font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,a,input,select,summary{-webkit-tap-highlight-color:transparent}button,select{border:1px solid var(--line);background:white;color:var(--ink);border-radius:9px;padding:10px 15px}button,select,summary{cursor:pointer}button:hover{background:#eef4f8}button:disabled{opacity:.4;cursor:default}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,[role=button]:focus-visible{outline:3px solid #e9a653;outline-offset:4px}a{color:var(--blue);text-underline-offset:3px}h1,h2,h3,p{margin-top:0}h2{font-size:25px;line-height:1.4;margin-bottom:8px}h3{font-size:17px;line-height:1.5;margin-bottom:10px}p{line-height:1.75}small,.small{font-size:12px;line-height:1.7}.muted{color:var(--muted)}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.shell{max-width:1440px;margin:auto;padding:26px 40px 20px}.topline,.links,.row,.between,.transport,.segmented{display:flex;align-items:center;gap:12px}.between{justify-content:space-between;flex-wrap:wrap}.topline{justify-content:space-between}.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em}.links{font-size:13px;flex-wrap:wrap}.links a{text-decoration:none}.topline button{font-size:12px;padding:8px 12px}.intro{margin:22px 0 20px;display:flex;align-items:end;justify-content:space-between;gap:20px}.intro h1{font-size:clamp(28px,3.2vw,42px);line-height:1.25;margin:0 0 9px;letter-spacing:-.04em}.intro p{margin:0;color:var(--muted);font-size:15px}.badge{display:inline-block;border:1px solid var(--line);border-radius:30px;padding:7px 11px;white-space:nowrap;font-size:12px;color:var(--muted)}.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px}.tabs button{text-align:left;background:transparent;border:0;padding:14px;border-radius:10px;font-size:15px;font-weight:600}.tabs button span{display:inline-block;margin-right:10px;font-size:12px;color:#65798b;font-weight:400}.tabs button[aria-selected=true]{background:var(--ink);color:white}.tabs button[aria-selected=true] span{color:#b8d7ee}[hidden]{display:none!important}.main-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start}.stage{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.stage-head{padding:20px 24px 16px;border-bottom:1px solid #e8edf0}.stage-head p{font-size:13px;margin:0;color:var(--muted)}.stage-head h2{font-size:21px}.stage-body{padding:24px}.side{padding:4px 0}.side p{font-size:14px;color:var(--muted);margin-bottom:16px}.side .lead{font-size:17px;line-height:1.7;color:var(--ink)}.control{display:block;margin-bottom:22px}.control .label,.control>label{display:flex;justify-content:space-between;gap:12px;font-weight:600;font-size:13px;margin-bottom:10px}.control select{width:100%;font-size:14px}.control input[type=range],.timeline input{width:100%;accent-color:var(--blue);cursor:pointer}.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}.primary{color:#fff;background:var(--blue);border-color:var(--blue)}.primary:hover{background:#173f67}.transport{flex-wrap:wrap;padding:16px 24px;border-top:1px solid var(--line);background:#fafcfd}.transport button{font-size:13px}.transport .counter{margin-left:auto;color:var(--muted);font-size:13px}.timeline{padding:0 24px 20px;background:#fafcfd}.note{font-size:12px;color:var(--muted);line-height:1.75;margin:13px 0 0}.callout{border-left:3px solid var(--teal);padding:4px 0 4px 14px;margin:22px 0}.callout p{margin:0;font-size:14px}.token-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.token{min-height:79px;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px 5px 13px;border:1px solid #dce5eb;border-radius:10px;background:#f8fafb;font-size:17px;word-break:break-word;transition:background .25s,border-color .25s}.token .pos{position:absolute;left:8px;top:7px;font-size:10px;color:#84929f}.token.mask{background:#eaf0f4;color:#6d8091;font-size:12px;border-style:dashed}.token.noise{color:#8c6233;background:#faf3e8;border-color:#eadcc4}.token.new{background:#dcebf9;border-color:#6096c1;color:#184971}.token.revised{background:#eee3f8;border-color:#9b73bb;color:#6c3c91}.token.clean{background:#edf5f2;border-color:#c4dcd3}.legend{display:flex;gap:17px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:18px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.flow{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:20px 0 26px;font-size:13px;color:var(--muted)}.flow .flowline{height:2px;flex:1;background:linear-gradient(90deg,#a9b4c2,var(--teal));position:relative}.flow .flowline:after{content:'›';position:absolute;right:-2px;top:-15px;font-size:24px;color:var(--teal)}.flow strong{color:var(--ink)}.formula{background:var(--soft);padding:12px 14px;border-radius:9px;line-height:1.8;font-size:13px;overflow-wrap:anywhere}.tag{font-size:11px;padding:4px 7px;border-radius:5px;background:#edf3f7;color:var(--muted)}details{font-size:12px;line-height:1.8;margin-top:18px}summary{font-weight:600;color:var(--blue)}details p{margin:10px 0}.compare-row{padding-bottom:25px}.compare-row+.compare-row{border-top:1px solid var(--line);padding-top:24px}.compare-title{display:flex;justify-content:space-between;font-size:14px;margin-bottom:13px}.compare-title b{font-size:17px}.compare-row .token{min-height:61px;font-size:14px;padding-top:17px}.compare-row .token.mask{font-size:10px}.count-chip{font-size:12px;color:var(--muted)}.meter-row{margin:14px 0}.meter-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.meter{height:9px;background:#edf1f4;border-radius:6px;overflow:hidden}.meter>i{display:block;height:100%;background:var(--blue);border-radius:6px;transition:width .2s}.number{font-size:32px;font-weight:700;letter-spacing:-.04em;color:var(--teal)}.cost-box{padding:16px;background:#f0f6f4;border:1px solid #d7e6e0;border-radius:12px;margin-bottom:17px}.cost-box p{margin:3px 0 0;font-size:12px}.benefits{display:grid;gap:11px;margin-top:22px}.benefits div{font-size:13px;line-height:1.65}.benefits b{color:var(--ink)}.kernel-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kernel-options button{font-size:12px;padding:11px 6px}.kernel-options button[aria-pressed=true]{color:#fff;background:var(--blue);border-color:var(--blue)}.network{display:block;width:100%;height:auto;min-height:250px}.network text{font-family:Arial,sans-serif;pointer-events:none}.network .node{cursor:pointer;outline-offset:3px}.network circle,.network line{transition:fill .2s,stroke-width .2s,opacity .2s}.mixture{display:flex;height:12px;border-radius:8px;overflow:hidden;background:#eef2f5;margin:12px 0}.mixture i{display:block;transition:width .2s}.probability-list{margin-top:20px}.prob-row{display:grid;grid-template-columns:44px 1fr 46px;align-items:center;gap:8px;font-size:12px;margin:9px 0}.prob-row .meter{height:6px}.segmented{gap:5px;background:#edf2f5;border-radius:10px;padding:4px;width:fit-content;margin-bottom:18px}.segmented button{border:0;background:transparent;font-size:13px;padding:9px 14px}.segmented button[aria-pressed=true]{background:#fff;box-shadow:0 1px 5px #17334a15;color:var(--blue)}.window{display:flex;gap:7px;flex-wrap:wrap;min-height:54px;margin:15px 0 22px}.word-chip{font-size:15px;padding:10px 13px;border-radius:8px;border:1px solid #d3dee7;background:#eef3f7}.group-0{color:#255c92;background:#e5eef8;border-color:#bfd2e6}.group-1{color:#936119;background:#fcf1d9;border-color:#ecdab1}.group-2{color:#28715b;background:#e6f3ec;border-color:#bddccd}.mass-row{display:grid;grid-template-columns:46px 1fr 100px;gap:12px;align-items:center;margin:24px 0;font-size:13px}.double-meter{display:grid;gap:6px}.double-meter .meter{height:12px}.before{opacity:.3}.mass-values{text-align:right;font-size:12px;color:var(--muted)}.preset-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:20px}.preset-row button{font-size:12px}.paper-intro{font-size:14px;line-height:1.8;color:var(--muted);max-width:960px}.evidence-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px}.plot{display:block;width:100%;height:auto}.plot text{font-family:Arial,sans-serif;fill:var(--muted);font-size:12px}.plot-legend{display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 0;font-size:12px}.plot-legend label{display:flex;align-items:center;gap:5px;cursor:pointer}.plot-legend input{accent-color:var(--teal)}.table-wrap{overflow-x:auto;margin-top:18px}table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:10px 12px;border-bottom:1px solid #e6ebef;white-space:nowrap}th:first-child,td:first-child{text-align:left}thead{background:#f2f6f8}tr.ours{background:#ebf5f1;font-weight:700;color:var(--teal)}td.selected,th.selected{background:#e8f0f5}.steps{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.steps button{padding:7px 10px;font-size:12px}.steps button[aria-pressed=true]{background:var(--blue);color:white}.source-link{font-size:12px}.fineprint{font-size:12px;line-height:1.8;color:var(--muted)}.footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:15px;margin-top:24px;color:var(--muted);font-size:11px;line-height:1.8}.footer p{margin:0}.status{font-size:12px;color:var(--blue);min-height:20px;margin-top:10px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(min-width:1500px){.shell{padding-top:40px}.stage-body{padding:32px}.token{min-height:90px}}
+@media(max-width:1050px){.shell{padding:20px}.main-grid,.evidence-grid{grid-template-columns:minmax(0,1fr) 255px;gap:18px}.stage-body{padding:18px}.token{font-size:14px}.tabs button{font-size:13px;padding:12px 8px}.tabs button span{margin-right:5px}.badge{display:none}}
+@media(max-width:800px){.main-grid,.evidence-grid{grid-template-columns:1fr}.side{padding-top:5px}.intro{margin:20px 0}.tabs{grid-template-columns:1fr 1fr}.topline{align-items:start}.eyebrow{font-size:10px;max-width:150px;line-height:1.6}.links{gap:10px;font-size:12px;justify-content:end}.token-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.token{min-height:70px}.side .control{max-width:none}.network{min-height:0}.stage-head{padding:18px}.transport{padding:14px 18px;gap:7px}.transport button{padding:9px 11px}.footer{gap:8px}.compare-row .token{min-height:57px}.stage-body{padding:18px}.compare-row{padding-bottom:18px}.compare-row+.compare-row{padding-top:18px}}
+@media(max-width:420px){.shell{padding:14px}.token-grid{gap:6px}.token{font-size:12px}.tabs button{font-size:12px}.intro h1{font-size:27px}.intro p{font-size:13px}.mass-row{grid-template-columns:36px 1fr 80px;gap:7px}.transport .counter{width:100%;margin:3px 0 0}.word-chip{padding:8px 10px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="shell">
+ <div class="topline"><span class="eyebrow">DIFFUSION LAB / 02 · LANGUAGE</span><div class="links"><a href="https://baojian.github.io/graph-diffusion-demo-site/">← 图上扩散</a><a href="https://arxiv.org/abs/2606.15327" target="_blank" rel="noopener">论文 ↗</a><button id="fullscreen" type="button">全屏 F</button></div></div>
+ <header class="intro"><div><h1>语言，也可以逐步去噪</h1><p>从一个句子的形成，到我们为什么重新设计“噪声”。</p></div><span class="badge">交互原理演示 · 无模型推理</span></header>
+ <nav class="tabs" role="tablist" aria-label="演示章节">
+  <button id="tab-generate" role="tab" aria-selected="true" aria-controls="scene-generate" data-scene="generate"><span>01</span>从噪声到语言</button>
+  <button id="tab-compare" role="tab" aria-selected="false" aria-controls="scene-compare" tabindex="-1" data-scene="compare"><span>02</span>与 AR 比较</button>
+  <button id="tab-kernel" role="tab" aria-selected="false" aria-controls="scene-kernel" tabindex="-1" data-scene="kernel"><span>03</span>选择怎样的噪声</button>
+  <button id="tab-paper" role="tab" aria-selected="false" aria-controls="scene-paper" tabindex="-1" data-scene="paper"><span>04</span>Semantic DLM+</button>
+ </nav>
+
+ <section id="scene-generate" role="tabpanel" aria-labelledby="tab-generate">
+  <div class="main-grid"><div class="stage">
+   <div class="stage-head"><div class="between"><h2 id="g-title">让整句话逐步清晰</h2><span class="tag">预设教学轨迹</span></div><p id="g-desc">一次模型调用，可以对多个位置作出预测。</p></div>
+   <div class="stage-body"><div class="flow"><span id="g-from">噪声 / 掩码</span><span class="flowline"></span><strong id="g-to">连贯的语言</strong></div><div id="g-tokens" class="token-grid" aria-label="当前句子"></div><div class="legend"><span><i class="dot" style="background:#6096c1"></i>本轮填入</span><span><i class="dot" style="background:#9b73bb"></i>本轮改写</span><span><i class="dot" style="background:#c5d8d0"></i>保留的词</span></div><p id="g-insight" class="note"></p></div>
+   <div class="transport"><button id="g-play" class="primary">开始去噪</button><button id="g-next">下一轮 →</button><button id="g-reset">重置</button><span id="g-counter" class="counter"></span></div>
+   <div class="timeline"><label class="sr-only" for="g-step">去噪或加噪进度</label><input id="g-step" type="range" min="0" max="6" step="1" value="0"><div class="ticks"><span>开始</span><span>完成</span></div></div>
+  </div><aside class="side">
+   <div class="control"><label for="g-direction">观察哪个方向</label><select id="g-direction"><option value="reverse">生成：噪声 → 句子</option><option value="forward">训练数据：句子 → 噪声</option></select></div>
+   <div class="control"><label for="g-kind">演示哪种过程</label><select id="g-kind"><option value="mask">掩码式：逐渐填空</option><option value="replace">替换式：已有词也能改写</option></select></div>
+   <p class="lead" id="g-side-lead">先学会在噪声中预测，再从噪声生成。</p>
+   <p>训练时把真实文本扰动，让模型结合上下文预测干净词元；生成时，从易采样的噪声先验出发，重复预测和采样。</p>
+   <div class="formula mono">x₀ → xₜ → noise<br>noise → xₜ → x₀</div>
+   <div class="callout"><p>词可以同时变得清晰；是否能改写已填入的词，取决于转移核与采样器。</p></div>
+   <p class="fineprint">本页用英文单词代替真实子词 token。动画是预设讲解示例，不是模型输出；真实生成不知道目标句子，也不需要恢复某个原句。</p>
+   <a class="source-link" href="https://arxiv.org/abs/2502.09992" target="_blank" rel="noopener">背景阅读：LLaDA ↗</a>
+  </aside></div>
+ </section>
+
+ <section id="scene-compare" role="tabpanel" aria-labelledby="tab-compare" hidden>
+  <div class="main-grid"><div class="stage">
+   <div class="stage-head"><h2>串行依赖，能不能少一些？</h2><p>每次推进代表一次模型调用，不代表相同的实际耗时。</p></div>
+   <div class="stage-body"><div class="compare-row"><div class="compare-title"><b>常规 AR 解码</b><span id="c-ar-count" class="count-chip"></span></div><div id="c-ar" class="token-grid"></div></div><div class="compare-row"><div class="compare-title"><b>并行去噪示意</b><span id="c-dlm-count" class="count-chip"></span></div><div id="c-dlm" class="token-grid"></div></div><p class="note">两行使用同一预设句子说明调度方式。减少轮数可能损失生成质量，这个动画不测量质量。</p></div>
+   <div class="transport"><button id="c-play" class="primary">同步演示</button><button id="c-next">推进一次 →</button><button id="c-reset">重置</button><span id="c-counter" class="counter"></span></div>
+   <div class="timeline"><label class="sr-only" for="c-step">模型调用进度</label><input id="c-step" type="range" min="0" max="12" value="0" step="1"></div>
+  </div><aside class="side">
+   <div class="control"><label for="c-rounds">去噪轮数 K <output id="c-rounds-out">4</output></label><input id="c-rounds" type="range" min="2" max="12" step="1" value="4"><div class="ticks"><span>2</span><span>12</span></div></div>
+   <div class="control"><label for="c-cost">单轮去噪相对成本 c <output id="c-cost-out">2.0</output></label><input id="c-cost" type="range" min="0.5" max="6" step="0.25" value="2"><div class="ticks"><span>0.5 ×</span><span>6 × AR 单词解码</span></div></div>
+   <div class="cost-box"><span class="small">假设成本模型下的 AR / DLM 耗时</span><div class="number" id="c-ratio"></div><p id="c-cost-message"></p><div class="meter-row"><div class="meter-label"><span>AR：N = 12</span><span>12 单位</span></div><div class="meter"><i id="c-ar-bar"></i></div></div><div class="meter-row"><div class="meter-label"><span>DLM：K × c</span><span id="c-dlm-cost"></span></div><div class="meter"><i id="c-dlm-bar" style="background:var(--teal)"></i></div></div></div>
+   <div class="benefits"><div><b>并行更新</b> · 一轮可处理多个位置。</div><div><b>双向条件</b> · 可利用已知的左、右片段填空。</div><div><b>迭代修订</b> · 替换核或重掩码可以重访已有词。</div></div>
+   <details><summary>比较边界</summary><p>成本 c 是你设定的假设，不是计时结果。实际速度还取决于序列长度、KV cache、硬件、采样方法和质量要求。AR 训练也可并行；AR 系统可通过专门训练或提示进行填空、重生成和编辑。这里比较的是常规逐词 AR 解码与理想化的全句去噪。</p></details>
+  </aside></div>
+ </section>
+
+ <section id="scene-kernel" role="tabpanel" aria-labelledby="tab-kernel" hidden>
+  <div class="main-grid"><div class="stage">
+   <div class="stage-head"><div class="between"><h2 id="k-title">“cat”应该变成什么噪声？</h2><span class="tag">前向条件分布 · 实时计算</span></div><p>点击一个词作为干净起点。圆的颜色和大小表示它作为噪声词的概率。</p></div>
+   <div class="stage-body"><svg id="k-graph" class="network" viewBox="0 0 760 390" role="group" aria-label="可交互词元转移图"></svg><div class="between"><span class="small muted">冷色：概率低　暖色：概率高</span><span id="k-sum" class="mono small"></span></div><div id="k-mixture" class="mixture" aria-label="转移分量权重"></div><div id="k-weights" class="legend"></div><p id="k-caption" class="note"></p></div>
+   <div class="transport"><button id="k-play" class="primary">逐步加噪</button><button id="k-next">增加噪声 →</button><button id="k-reset">回到干净词</button><span id="k-counter" class="counter"></span></div>
+  </div><aside class="side">
+   <div class="control"><span class="label">选择转移核</span><div class="kernel-options" role="group" aria-label="转移核"><button data-kernel="mask" aria-pressed="false">Masking</button><button data-kernel="uniform" aria-pressed="false">Uniform</button><button data-kernel="semantic" aria-pressed="false">Semantic</button><button data-kernel="plus" aria-pressed="true">SemDLM+</button></div></div>
+   <div class="control"><label for="k-time">噪声时间 t <output id="k-time-out">0.50</output></label><input id="k-time" type="range" min="0" max="100" step="1" value="50"><div class="ticks"><span>0 · 干净</span><span>1 · 噪声先验</span></div></div>
+   <div class="control" id="k-gamma-control"><label for="k-gamma">语义邻域扩展 γ <output id="k-gamma-out">2.0</output></label><input id="k-gamma" type="range" min="0.5" max="4" step="0.5" value="2"></div>
+   <div id="k-equation" class="formula mono"></div><div id="k-probs" class="probability-list"></div>
+   <p class="fineprint">手工词表与相似度，用于观察概率分配。这里展示 q(xₜ | x₀)，不是完整反向采样器。反向生成还需要模型提供上下文预测。</p>
+   <details><summary>与论文公式的对应</summary><p>SemDLM+ 使用论文式 (22)：α = 1 − t，β = t²，语义权重 t − t²。这里用均匀全局先验，KNN 排除原词，邻居数取整。Semantic 对照采用式 (8) 的 softmax 形式，教学温度 τ = 0.35t/(1−t)，在 t = 1 达到均匀先验。词表、相似度和温度为演示设定。</p></details>
+  </aside></div>
+ </section>
+
+ <section id="scene-paper" role="tabpanel" aria-labelledby="tab-paper" hidden>
+  <div class="between"><div class="segmented" role="group" aria-label="论文展示"><button id="p-mechanism" aria-pressed="true">语义盆地实验</button><button id="p-evidence" aria-pressed="false">论文中的证据</button></div><a class="source-link" href="https://arxiv.org/pdf/2606.15327#page=8" target="_blank" rel="noopener">Semantic DLM+ · arXiv v1 ↗</a></div>
+  <div id="paper-mechanism" class="main-grid"><div class="stage">
+   <div class="stage-head"><h2>不重复“cat”，就一定不重复了吗？</h2><p>cat → dog → fox：词变了，语义可能仍困在一个区域。比较同一历史下的候选分布。</p></div>
+   <div class="stage-body"><div class="between"><span class="small muted">最近 8 个采样词 · 手工概率实验</span><span id="p-draws" class="small muted"></span></div><div id="p-window" class="window"></div><div class="legend"><span><i class="dot" style="background:#b9c7d2"></i>校正前</span><span><i class="dot" style="background:#347db2"></i>校正后</span></div><div id="p-masses"></div><div class="formula mono">新 logit = 原 logit<br>− λfreq log(1 + 本词次数)<br>− λsem log(1 + 语义邻域频率)</div><p id="p-observation" class="note"></p></div>
+   <div class="transport"><button id="p-play" class="primary">连续采样</button><button id="p-next">采样一个词 →</button><button id="p-reset">同一起点重置</button></div>
+  </div><aside class="side">
+   <div class="control"><label for="p-freq">精确词频惩罚 λfreq <output id="p-freq-out">0.0</output></label><input id="p-freq" type="range" min="0" max="3" step="0.1" value="0"></div>
+   <div class="control"><label for="p-sem">语义频率惩罚 λsem <output id="p-sem-out">0.0</output></label><input id="p-sem" type="range" min="0" max="3" step="0.1" value="0"></div>
+   <div class="preset-row"><button data-preset="none">无惩罚</button><button data-preset="freq">仅词频</button><button data-preset="both">词频 + 语义</button></div>
+   <div class="callout"><p>第三幕提供全局混合通道；这一幕用式 (23) 抑制采样中的语义重复。两个机制相互补充。</p></div>
+   <p>只压低一个词，其他近义词仍可能占据高概率。语义惩罚把整个邻域的使用频率纳入考虑。</p>
+   <p class="fineprint">这里的词与分数是手工设定，采样是真实的概率抽样，但不是 SemDLM+ 文本推理。改变参数会暂停播放；预设按钮和重置使用相同随机种子。</p>
+   <details><summary>实验定义与限制</summary><p>窗口 W = 8。相似度 S₊：同词 1、同组 0.75、跨组 0；m(k) = Σ S₊(k,l)n(l)。原 logit = 小幅动物主题偏好 + 0.36m(k)，人为模拟正反馈。按论文式 (23) 校正后再 softmax。惩罚越强并非越好：过强可压低合理的主题词。这里不评估语法或生成质量。</p></details>
+  </aside></div>
+  <div id="paper-evidence" hidden>
+   <p class="paper-intro">这项工作的切入点：<strong>怎样设计噪声，才能兼顾学习难度与采样修复？</strong> 语义邻域提供结构，却也会形成重复的“盆地”。SemDLM+ 加入全局转移与语义频率校正，并在 LM1B、OpenWebText 上检验。</p>
+   <div class="evidence-grid"><div class="stage"><div class="stage-head"><div class="between"><h2>更多去噪步数，带来了什么？</h2><span class="tag">论文表 3 · 已报告数值</span></div><p>Generation PPL ↓，由 GPT-2-Large 评分；不是运行时间或 AR 对比。</p></div><div class="stage-body"><svg id="e-plot" class="plot" viewBox="0 0 760 340" role="img" aria-label="不同采样步数下的生成困惑度"></svg><div id="e-legend" class="plot-legend"></div><div id="e-table" class="table-wrap"></div><p class="fineprint">† 作者复现；‡ 引自对应论文；无标记者保留原表标注。表注称进行了 3 次测试并报告 upper bound，未给出误差区间。</p></div></div><aside class="side">
+    <div class="control"><label for="e-dataset">数据集</label><select id="e-dataset"><option value="lm1b">LM1B · 生成长度 128</option><option value="owt">OpenWebText · 生成长度 1024</option></select></div>
+    <span class="small muted">选择采样步数</span><div id="e-steps" class="steps"></div>
+    <div class="cost-box"><span class="small">SemDLM+ · 当前预算</span><div class="number" id="e-value"></div><p id="e-best"></p></div>
+    <p class="fineprint">本工作模型约 0.1B（110M）参数，最多训练 200K 步；使用半自回归分块采样。生成结果筛选条件：文本熵 ≥ 4.8。低 PPL 也可能来自低多样性的重复，因此不能只看这一个指标。</p>
+    <details><summary>LM1B 测试 PPL（论文表 2）</summary><div id="e-test-table" class="table-wrap"></div><p>测试 PPL 与上图的生成 PPL 是两种评估，不能混为一谈。</p></details>
+    <div class="callout"><p>优势是为转移核设计提供解释和改进方法。这些实验不证明所有预算都最优，也不证明优于 AR。</p></div>
+    <details><summary>继续研究的问题</summary><p>词元层面的语义难以完全表达上下文含义；惩罚强度需要调节；更大模型与更广泛的质量、多样性评估仍然重要。误差分析有其假设，不是动画测出的三项误差。</p></details>
+   </aside></div>
+  </div>
+ </section>
+ <div id="status" class="status" role="status" aria-live="polite"></div>
+ <footer class="footer"><p>演示可离线打开 · 动画为教学示意，概率实验为手工小模型，论文表格为已报告结果。</p><p>空格 播放/暂停 · → 单步 · R 重置 · F 全屏 · 1–4 切换章节</p></footer>
+ <noscript><p>请启用 JavaScript 运行交互演示。论文可通过页首链接直接阅读。</p></noscript>
+</main>
+<script id="dlm-engine">
+/* Teaching mechanisms only. No pretrained network or inference API is used. */
+globalThis.LanguageDiffusion = (() => {
+  'use strict';
+  const sentence = 'The curious student explores new ideas with her research group today .'.split(' ');
+  const noise = 'bus forest glass river wolf road pine train cat moss car oak'.split(' ');
+  const guesses = 'A quiet teacher studies old questions near our reading team tomorrow !'.split(' ');
+  const order = [0, 11, 6, 3, 8, 2, 9, 4, 7, 1, 10, 5];
+  const words = ['cat','dog','fox','wolf','tiger','lion','bus','car','train','truck','plane','boat','oak','pine','rose','lily','moss','fern'];
+  const groups = ['动物','交通','植物'];
+  const vocabulary = words.map((word,i) => ({word, group: Math.floor(i/6)}));
+  const check = (condition,message) => { if (!condition) throw new RangeError(message); };
+  function frame(step, rounds=6, kind='mask', direction='reverse') {
+    check(Number.isInteger(rounds) && rounds>=2 && rounds<=12,'rounds must be 2..12');
+    check(Number.isInteger(step) && step>=0 && step<=rounds,'invalid step');
+    check(['mask','replace'].includes(kind) && ['forward','reverse'].includes(direction),'invalid trajectory');
+    return sentence.map((word,i) => {
+      const rank = order.indexOf(i);
+      if (direction==='forward') {
+        const corrupted = rank < Math.floor(step*sentence.length/rounds);
+        return corrupted ? (kind==='mask' ? '[MASK]' : noise[i]) : word;
+      }
+      const reveal = Math.floor(rank*rounds/sentence.length)+1;
+      if (step>=reveal) return word;
+      if (kind==='mask') return '[MASK]';
+      return step>0 && step>=reveal-1 ? guesses[i] : noise[i];
+    });
+  }
+  function comparison(pass,rounds) {
+    check(Number.isInteger(pass) && pass>=0 && pass<=sentence.length,'invalid pass');
+    return { ar: sentence.map((w,i)=>i<pass?w:'…'), dlm: frame(Math.min(pass,rounds),rounds), arCalls:pass, dlmCalls:Math.min(pass,rounds) };
+  }
+  function cost(rounds,relativeCost) {
+    check(Number.isInteger(rounds) && rounds>=2 && rounds<=12 && Number.isFinite(relativeCost) && relativeCost>0,'invalid cost');
+    return {ar:12, dlm:rounds*relativeCost, ratio:12/(rounds*relativeCost)};
+  }
+  function softmax(logits) {
+    check(logits.length>0 && logits.every(Number.isFinite),'invalid logits');
+    const max=Math.max(...logits), weights=logits.map(x=>Math.exp(x-max)), sum=weights.reduce((a,b)=>a+b,0);
+    return weights.map(x=>x/sum);
+  }
+  function similarity(a,b) {
+    return a===b ? 1 : vocabulary[a].group===vocabulary[b].group ? .75 : 0;
+  }
+  function kernel(kind,source,t,gamma=2) {
+    check(['mask','uniform','semantic','plus'].includes(kind),'unknown kernel');
+    check(Number.isInteger(source) && source>=0 && source<words.length,'invalid source');
+    check(Number.isFinite(t) && t>=0 && t<=1 && Number.isFinite(gamma) && gamma>0,'invalid noise level');
+    const V=words.length, p=Array(V+1).fill(0), alpha=1-t;
+    p[source]=alpha;
+    let weights={keep:alpha,local:0,global:0,mask:0}, k=0;
+    if(kind==='mask') {p[V]=t; weights.mask=t;}
+    if(kind==='uniform') {for(let j=0;j<V;j++) p[j]+=t/V; weights.global=t;}
+    if(kind==='semantic') {
+      const sem=t===0 ? words.map((_,j)=>Number(j===source)) : t===1 ? words.map(()=>1/V) : softmax(words.map((_,j)=>similarity(source,j)/(.35*t/(1-t))));
+      for(let j=0;j<V;j++) p[j]+=t*sem[j]; weights.local=t;
+    }
+    if(kind==='plus') {
+      const beta=t*t, local=t-beta;
+      k=Math.max(1,Math.min(V-1,Math.round(1+(V-2)*t**gamma)));
+      const neighbors=words.map((_,j)=>j).filter(j=>j!==source).sort((a,b)=>similarity(source,b)-similarity(source,a) || a-b).slice(0,k);
+      for(let j=0;j<V;j++) p[j]+=beta/V;
+      for(const j of neighbors) p[j]+=local/k;
+      weights={keep:alpha,local,global:beta,mask:0};
+    }
+    return {p,weights,k};
+  }
+  function corrected(history,lambdaFreq=0,lambdaSem=0) {
+    check(Array.isArray(history) && history.every(i=>Number.isInteger(i)&&i>=0&&i<words.length),'invalid history');
+    check(Number.isFinite(lambdaFreq)&&lambdaFreq>=0&&Number.isFinite(lambdaSem)&&lambdaSem>=0,'invalid penalty');
+    const counts=words.map((_,k)=>history.slice(-8).filter(i=>i===k).length);
+    const semanticCounts=words.map((_,k)=>counts.reduce((s,n,l)=>s+similarity(k,l)*n,0));
+    // Explicitly hand-built logits, not model scores: a small topic preference plus reinforcement.
+    const logits=words.map((_,k)=>(k<6?.2:0)+.36*semanticCounts[k]);
+    const adjusted=logits.map((l,k)=>l-lambdaFreq*Math.log1p(counts[k])-lambdaSem*Math.log1p(semanticCounts[k]));
+    return {counts,semanticCounts,logits,adjusted,before:softmax(logits),after:softmax(adjusted)};
+  }
+  function rng(seed=42) {
+    let s=seed>>>0;
+    return ()=> {s+=0x6D2B79F5; let t=s; t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
+  }
+  function sample(p,random) {
+    check(p.length>0&&p.every(x=>Number.isFinite(x)&&x>=0)&&Math.abs(p.reduce((a,b)=>a+b,0)-1)<1e-9,'invalid distribution');
+    const r=random(); check(r>=0&&r<1,'invalid random draw');
+    let c=0;for(let i=0;i<p.length;i++){c+=p[i];if(r<c)return i;}return p.length-1;
+  }
+  const results=[
+    {id:'d3pm',name:'D3PM Uniform',color:'#919eab',lm1b:[null,150.37,133.92],owt:[407.72,146.89,112.86,96.46],lm1bMark:['','',''],owtMark:['','','','']},
+    {id:'mdlm',name:'MDLM',color:'#347db2',lm1b:[93.69,85.24,78.02],owt:[76.50,64.20,50.70,43.00],lm1bMark:['†','†','†'],owtMark:['†','†','†','†']},
+    {id:'remdm',name:'ReMDM',color:'#d18b32',lm1b:[91.19,85.21,75.98],owt:[72.61,62.43,50.75,41.25],lm1bMark:['†','†','†'],owtMark:['†','†','†','†']},
+    {id:'seddu',name:'SEDD Uniform',color:'#7c88a2',lm1b:[117.33,104.51,106.06],owt:[153.01,150.21,163.97,52.00],lm1bMark:['†','†','†'],owtMark:['','','','‡']},
+    {id:'seddm',name:'SEDD Masking',color:'#8b6aaf',lm1b:[74.48,65.63,70.74],owt:[80.51,69.93,68.97,46.80],lm1bMark:['†','†','†'],owtMark:['†','†','†','‡']},
+    {id:'gidd',name:'GIDD',color:'#8b9580',lm1b:[85.09,92.44,89.76],owt:[345.53,245.71,106.18,94.92],lm1bMark:['†','†','†'],owtMark:['†','†','†','†']},
+    {id:'ours',name:'SemDLM+',color:'#087e79',lm1b:[74.52,54.08,36.60],owt:[64.39,62.72,41.91,34.37],lm1bMark:['','',''],owtMark:['','','','']}
+  ];
+  const testPPL=[['SemDLM (KNN)',149.50],['Uniform DLM',88.03],['D3PM Masking',82.34],['Masking DLM',31.78],['SEDD Uniform',40.68],['SEDD Masking',32.68],['GIDD',34.34],['SemDLM+',27.19]];
+  return {sentence,words,vocabulary,groups,frame,comparison,cost,softmax,similarity,kernel,corrected,rng,sample,results,testPPL};
+})();
+
+</script>
+<script id="dlm-ui">
+(() => {
+  'use strict';
+  const M=LanguageDiffusion, $=id=>document.getElementById(id), scenes=['generate','compare','kernel','paper'];
+  const state={scene:'generate',g:0,direction:'reverse',kind:'mask',c:0,rounds:4,cost:2,kernel:'plus',source:0,time:50,gamma:2,history:[0,1,0,2,1,0,3,0],freq:0,sem:0,draws:0,dataset:'lm1b',budget:2,evidence:false,lines:new Set(['mdlm','remdm','seddm','ours'])};
+  let random=M.rng(42), timer=null, timerOwner=null;
+  const pct=n=>(100*n).toFixed(1)+'%';
+  const groupColors=['#347db2','#c78a2d','#3e8d6c'];
+  const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const svg=(tag,attrs={},text='')=>{const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;return n;};
+  function buttons(){
+    $('g-play').textContent=timerOwner==='generate'?'暂停':state.direction==='reverse'?'开始去噪':'开始加噪';
+    $('c-play').textContent=timerOwner==='compare'?'暂停':'同步演示';
+    $('k-play').textContent=timerOwner==='kernel'?'暂停':'逐步加噪';
+    $('p-play').textContent=timerOwner==='paper'?'暂停':'连续采样';
+  }
+  function stop(){if(timer!==null)clearInterval(timer);timer=null;timerOwner=null;buttons();}
+  function reset(owner){
+    stop();
+    if(owner==='generate'){state.g=0;renderGeneration();}
+    if(owner==='compare'){state.c=0;renderCompare();}
+    if(owner==='kernel'){state.time=0;renderKernel();}
+    if(owner==='paper'){state.history=[0,1,0,2,1,0,3,0];state.draws=0;random=M.rng(42);renderPenalty();}
+  }
+  function tick(owner){
+    if(owner==='generate'){state.g=Math.min(6,state.g+1);renderGeneration();if(state.g===6)stop();}
+    if(owner==='compare'){state.c=Math.min(12,state.c+1);renderCompare();if(state.c===12)stop();}
+    if(owner==='kernel'){state.time=Math.min(100,state.time+5);renderKernel();if(state.time===100)stop();}
+    if(owner==='paper'){
+      const p=M.corrected(state.history,state.freq,state.sem).after;
+      state.history=[...state.history.slice(-7),M.sample(p,random)];state.draws++;renderPenalty();
+      if(state.draws>=32)stop();
+    }
+  }
+  function toggle(owner){
+    if(timerOwner===owner){stop();return;}
+    stop();
+    if((owner==='generate'&&state.g===6)||(owner==='compare'&&state.c===12)||(owner==='kernel'&&state.time===100)||(owner==='paper'&&state.draws>=32))reset(owner);
+    timerOwner=owner;timer=setInterval(()=>tick(owner),850);buttons();
+  }
+  function tokenRow(id,words,previous=[],forward=false){
+    $(id).innerHTML=words.map((word,i)=>{
+      const masked=word==='[MASK]'||word==='…';
+      let cls=masked?'mask':word===M.sentence[i]?'clean':'noise';
+      if(!forward&&!masked&&previous.length&&word!==previous[i])cls=previous[i]==='[MASK]'||previous[i]==='…'?'new':'revised';
+      return `<div class="token ${cls}"><span class="pos">${String(i+1).padStart(2,'0')}</span><span>${escape(word)}</span></div>`;
+    }).join('');
+  }
+  function renderGeneration(){
+    const forward=state.direction==='forward',current=M.frame(state.g,6,state.kind,state.direction),previous=state.g?M.frame(state.g-1,6,state.kind,state.direction):[];
+    tokenRow('g-tokens',current,previous,forward);
+    $('g-title').textContent=forward?'把真实句子逐步扰动':'让整句话逐步清晰';
+    $('g-desc').textContent=forward?'设计加噪过程，为模型构造不同难度的训练样本。':'一次模型调用，可以对多个位置作出预测。';
+    $('g-from').textContent=forward?'真实训练句子':'噪声 / 掩码';$('g-to').textContent=forward?'噪声先验':'连贯的语言';
+    $('g-counter').textContent=`${forward?'加噪':'去噪'} ${state.g} / 6`;$('g-step').value=state.g;$('g-next').disabled=state.g===6;
+    $('g-side-lead').textContent=forward?'加噪规则是设计的，去噪能力是学习的。':'先学会在噪声中预测，再从噪声生成。';
+    $('g-insight').textContent=forward?'训练通常随机选择噪声时间；不必为每个句子完整跑过动画里的所有步骤。':state.kind==='mask'?'这里采用揭示后保留的掩码采样示意。若要重访已填入的词，需要重掩码等额外机制。':'观察紫色词：替换型过程能够在后续步骤改写已有词；修订能力不等于每次都改对。';
+    buttons();
+  }
+  function renderCompare(){
+    const cur=M.comparison(state.c,state.rounds),prev=state.c?M.comparison(state.c-1,state.rounds):{ar:[],dlm:[]};
+    tokenRow('c-ar',cur.ar,prev.ar);tokenRow('c-dlm',cur.dlm,prev.dlm);
+    $('c-ar-count').textContent=`${cur.arCalls} / 12 次调用`;$('c-dlm-count').textContent=`${cur.dlmCalls} / ${state.rounds} 次调用`;
+    $('c-counter').textContent=`调度轮次 ${state.c} / 12`;$('c-step').value=state.c;$('c-next').disabled=state.c===12;
+    const costs=M.cost(state.rounds,state.cost),scale=Math.max(costs.ar,costs.dlm);
+    $('c-rounds-out').textContent=state.rounds;$('c-cost-out').textContent=state.cost.toFixed(2);
+    $('c-ratio').textContent=costs.ratio.toFixed(2)+' ×';
+    $('c-cost-message').textContent=Math.abs(costs.ratio-1)<1e-9?'当前假设下，两者用时相当。':costs.ratio>1?'当前假设下，较少轮次能够抵消单轮成本。':'当前假设下，DLM 用时更长；少轮次不自动等于更快。';
+    $('c-ar-bar').style.width=100*costs.ar/scale+'%';$('c-dlm-bar').style.width=100*costs.dlm/scale+'%';$('c-dlm-cost').textContent=costs.dlm.toFixed(1)+' 单位';
+  }
+  const positions=M.words.map((_,i)=>{const angle=(i%6)*Math.PI/3-Math.PI/2;return {x:[135,380,625][Math.floor(i/6)]+78*Math.cos(angle),y:210+78*Math.sin(angle)};});
+  positions.push({x:380,y:53});
+  const edges=[],nodes=[];
+  function buildGraph(){
+    const graph=$('k-graph');
+    for(let i=0;i<19;i++){const e=svg('line',{stroke:'#8eabbf','stroke-linecap':'round'});graph.appendChild(e);edges.push(e);}
+    for(let g=0;g<3;g++){graph.appendChild(svg('circle',{cx:[135,380,625][g],cy:210,r:116,fill:['#f4f7fb','#fcf8ef','#f0f7f3'][g]}));graph.appendChild(svg('text',{x:[135,380,625][g],y:366,'text-anchor':'middle',fill:groupColors[g],'font-size':15},M.groups[g]));}
+    // Put probability edges over the soft semantic regions, underneath the nodes.
+    edges.forEach(e=>graph.appendChild(e));
+    for(let i=0;i<19;i++){
+      const {x,y}=positions[i],isMask=i===18;
+      const g=svg('g',{class:isMask?'':'node',...(isMask?{}:{role:'button',tabindex:0,'aria-label':M.words[i]})});
+      const ring=svg('circle',{cx:x,cy:y,r:36,fill:'none',stroke:'#142e4b','stroke-width':2,'stroke-dasharray':'3 3'});
+      const circle=svg('circle',{cx:x,cy:y,r:24,fill:'#e9eff5',stroke:'#b7c8d5','stroke-width':1});
+      const label=svg('text',{x,y:y+5,'text-anchor':'middle','font-size':isMask?11:14,fill:'#183650'},isMask?'[MASK]':M.words[i]);
+      const value=svg('text',{x,y:y+48,'text-anchor':'middle','font-size':10,fill:'#687e90'});
+      const title=svg('title');[ring,circle,label,value,title].forEach(n=>g.appendChild(n));graph.appendChild(g);nodes.push({g,ring,circle,label,value,title});
+      if(!isMask){const choose=()=>{stop();state.source=i;renderKernel();};g.addEventListener('click',choose);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}});}
+    }
+  }
+  function renderKernel(){
+    const {p,weights,k}=M.kernel(state.kernel,state.source,state.time/100,state.gamma);
+    $('k-title').textContent=`“${M.words[state.source]}”应该变成什么噪声？`;
+    p.forEach((prob,i)=>{
+      const strength=Math.sqrt(prob),start=[235,242,248],end=[189,55,41],color=start.map((v,j)=>Math.round(v+(end[j]-v)*strength));
+      nodes[i].circle.setAttribute('fill',`rgb(${color.join(',')})`);nodes[i].circle.setAttribute('r',24+11*strength);
+      nodes[i].circle.setAttribute('stroke',i===state.source?'#142e4b':'#afc3d1');nodes[i].ring.setAttribute('visibility',i===state.source?'visible':'hidden');
+      nodes[i].label.setAttribute('fill',prob>.45?'#fff':'#183650');nodes[i].value.textContent=pct(prob);
+      nodes[i].title.textContent=`${i===18?'[MASK]':M.words[i]}: ${pct(prob)}`;
+      if(i<18)nodes[i].g.setAttribute('aria-label',`${M.words[i]}，概率 ${pct(prob)}${i===state.source?'，当前起点':'，点击设为起点'}`);
+      const e=edges[i],source=positions[state.source],target=positions[i];
+      e.setAttribute('x1',source.x);e.setAttribute('y1',source.y);e.setAttribute('x2',target.x);e.setAttribute('y2',target.y);e.setAttribute('stroke-width',1+10*prob);e.setAttribute('opacity',i===state.source||prob<.001?0:.25+.65*strength);
+      nodes[i].g.setAttribute('opacity',i===18&&state.kernel!=='mask'?.28:1);
+    });
+    document.querySelectorAll('[data-kernel]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.kernel===state.kernel));
+    $('k-time').value=state.time;$('k-time-out').textContent=(state.time/100).toFixed(2);$('k-counter').textContent=`t = ${(state.time/100).toFixed(2)}`;$('k-gamma-out').textContent=state.gamma.toFixed(1);$('k-gamma-control').hidden=state.kernel!=='plus';$('k-next').disabled=state.time===100;
+    const entries=[['keep','保留原词','#20578c'],['local','语义邻域','#087e79'],['global','全局混合','#d18b32'],['mask','变成 MASK','#9aa8b6']];
+    $('k-mixture').innerHTML=entries.map(([key,,color])=>`<i style="width:${100*weights[key]}%;background:${color}"></i>`).join('');
+    $('k-weights').innerHTML=entries.filter(([key])=>weights[key]>0).map(([key,name,color])=>`<span><i class="dot" style="background:${color}"></i>${name} ${pct(weights[key])}</span>`).join('');
+    $('k-sum').textContent='Σ p = '+p.reduce((a,b)=>a+b,0).toFixed(4);
+    const names={mask:'q = (1−t)·原词 + t·MASK',uniform:'q = (1−t)·原词 + t·全词表均匀',semantic:'q = (1−t)·原词 + t·语义 softmax',plus:'q = (1−t)·原词 + t²·全局<br>+ (t−t²)·KNN 语义邻域'};
+    $('k-equation').innerHTML=names[state.kernel];
+    $('k-caption').textContent=state.kernel==='plus'?`语义邻居数 k = ${k}（排除原词）。全局分量让其他语义区域也获得非零概率。`:state.kernel==='mask'?'掩码把被扰动的位置集中到一个吸收状态；这里的 [MASK] 不是词表中的普通词。':state.kernel==='uniform'?'均匀替换可到达整个词表，也使扰动更分散。': '语义替换优先把词变成相关词；噪声时间接近 1 时，教学温度增大，分布趋向均匀。';
+    const top=p.map((value,i)=>({value,i})).sort((a,b)=>b.value-a.value).slice(0,5);
+    $('k-probs').innerHTML='<span class="small muted">概率最高的 5 个状态</span>'+top.map(({value,i})=>`<div class="prob-row"><span>${i===18?'MASK':M.words[i]}</span><div class="meter"><i style="width:${100*value}%"></i></div><span>${pct(value)}</span></div>`).join('');
+  }
+  function renderPenalty(){
+    const {before,after}=M.corrected(state.history,state.freq,state.sem);
+    $('p-freq').value=state.freq;$('p-sem').value=state.sem;$('p-freq-out').textContent=state.freq.toFixed(1);$('p-sem-out').textContent=state.sem.toFixed(1);
+    $('p-window').innerHTML=state.history.map(i=>`<span class="word-chip group-${M.vocabulary[i].group}">${M.words[i]}</span>`).join('');$('p-draws').textContent=`已采样 ${state.draws} 次`;
+    const sum=(p,g)=>p.slice(g*6,g*6+6).reduce((a,b)=>a+b,0);
+    $('p-masses').innerHTML=M.groups.map((name,g)=>`<div class="mass-row"><b>${name}</b><div class="double-meter"><div class="meter"><i class="before" style="width:${100*sum(before,g)}%;background:${groupColors[g]}"></i></div><div class="meter"><i style="width:${100*sum(after,g)}%;background:${groupColors[g]}"></i></div></div><span class="mass-values">${pct(sum(before,g))}<br>→ ${pct(sum(after,g))}</span></div>`).join('');
+    const unique=new Set(state.history).size;
+    $('p-observation').textContent=`当前窗口有 ${unique} 个不同词，覆盖 ${new Set(state.history.map(i=>M.vocabulary[i].group)).size} 个语义组。条形图表示下一次抽样的组概率，不是生成质量得分。`;
+  }
+  function renderEvidence(){
+    const dataset=state.dataset,steps=dataset==='lm1b'?[128,256,512]:[128,256,512,1024];
+    state.budget=Math.min(state.budget,steps.length-1);
+    $('e-steps').innerHTML=steps.map((n,i)=>`<button data-budget="${i}" aria-pressed="${i===state.budget}">${n}</button>`).join('');
+    $('e-steps').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{state.budget=Number(b.dataset.budget);renderEvidence();}));
+    const chosen=M.results.filter(row=>state.lines.has(row.id)),all=chosen.flatMap(r=>r[dataset]).filter(v=>v!==null),ymax=Math.max(20,Math.ceil(Math.max(0,...all)/20)*20);
+    const x=i=>65+i*650/(steps.length-1),y=v=>276-v/ymax*228,plot=$('e-plot');plot.replaceChildren();
+    plot.appendChild(svg('title',{},`论文表 3，${dataset==='lm1b'?'LM1B':'OpenWebText'} 的生成 PPL，越低越好`));
+    for(let i=0;i<=4;i++){const val=ymax*i/4;plot.appendChild(svg('line',{x1:65,y1:y(val),x2:715,y2:y(val),stroke:'#dfe6eb'}));plot.appendChild(svg('text',{x:53,y:y(val)+4,'text-anchor':'end'},val.toFixed(0)));}
+    plot.appendChild(svg('text',{x:65,y:23},'Generation PPL ↓'));
+    plot.appendChild(svg('line',{x1:x(state.budget),y1:40,x2:x(state.budget),y2:276,stroke:'#91acbf','stroke-dasharray':'4 4'}));
+    steps.forEach((n,i)=>plot.appendChild(svg('text',{x:x(i),y:302,'text-anchor':'middle'},String(n))));plot.appendChild(svg('text',{x:390,y:331,'text-anchor':'middle'},'采样步数'));
+    for(const row of chosen){let segment=[];const draw=()=>{if(segment.length>1)plot.appendChild(svg('polyline',{points:segment.join(' '),fill:'none',stroke:row.color,'stroke-width':row.id==='ours'?3.5:2}));segment=[];};row[dataset].forEach((v,i)=>{if(v===null){draw();return;}segment.push(`${x(i)},${y(v)}`);});draw();row[dataset].forEach((v,i)=>{if(v===null)return;const c=svg('circle',{cx:x(i),cy:y(v),r:i===state.budget?6:4,fill:row.color,stroke:'#fff','stroke-width':1.5});c.appendChild(svg('title',{},`${row.name} / ${steps[i]} 步: ${v.toFixed(2)}`));plot.appendChild(c);});}
+    $('e-legend').innerHTML=M.results.map(row=>`<label><input type="checkbox" data-line="${row.id}" ${state.lines.has(row.id)?'checked':''}><i class="dot" style="background:${row.color}"></i>${row.name}</label>`).join('');
+    $('e-legend').querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>{input.checked?state.lines.add(input.dataset.line):state.lines.delete(input.dataset.line);renderEvidence();}));
+    $('e-table').innerHTML='<table><caption class="sr-only">论文表 3：全部方法的生成 PPL</caption><thead><tr><th scope="col">方法</th>'+steps.map((n,i)=>`<th scope="col" class="${i===state.budget?'selected':''}">${n} 步</th>`).join('')+'</tr></thead><tbody>'+M.results.map(row=>`<tr class="${row.id==='ours'?'ours':''}"><th scope="row">${row.name}</th>${row[dataset].map((value,i)=>`<td class="${i===state.budget?'selected':''}">${value===null?'—':value.toFixed(2)+row[dataset+'Mark'][i]}</td>`).join('')}</tr>`).join('')+'</tbody></table>';
+    const ours=M.results.find(r=>r.id==='ours')[dataset][state.budget];const ranked=M.results.filter(r=>r[dataset][state.budget]!==null).sort((a,b)=>a[dataset][state.budget]-b[dataset][state.budget]);
+    $('e-value').textContent=ours.toFixed(2);$('e-best').textContent=`表中当前最低：${ranked[0].name}，${ranked[0][dataset][state.budget].toFixed(2)}。`;
+    $('e-test-table').innerHTML='<table><caption class="sr-only">论文表 2：LM1B 测试 PPL</caption><thead><tr><th scope="col">方法</th><th scope="col">Test PPL ↓</th></tr></thead><tbody>'+M.testPPL.map(([name,value])=>`<tr class="${name==='SemDLM+'?'ours':''}"><th scope="row">${name}</th><td>${value.toFixed(2)}</td></tr>`).join('')+'</tbody></table>';
+  }
+  function chooseScene(scene){
+    stop();state.scene=scene;
+    scenes.forEach(s=>{$('scene-'+s).hidden=s!==scene;const b=$('tab-'+s);b.setAttribute('aria-selected',s===scene);b.tabIndex=s===scene?0:-1;});
+    $('status').textContent='';
+  }
+  function paperView(evidence){stop();state.evidence=evidence;$('paper-evidence').hidden=!evidence;$('paper-mechanism').hidden=evidence;$('p-evidence').setAttribute('aria-pressed',evidence);$('p-mechanism').setAttribute('aria-pressed',!evidence);}
+  async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{$('status').textContent='网页全屏不可用，可使用浏览器菜单中的全屏功能。';}}
+  for(const [prefix,owner]of [['g','generate'],['c','compare'],['k','kernel'],['p','paper']]){
+    $(prefix+'-play').addEventListener('click',()=>toggle(owner));$(prefix+'-next').addEventListener('click',()=>{stop();tick(owner);});$(prefix+'-reset').addEventListener('click',()=>reset(owner));
+  }
+  $('g-step').addEventListener('input',e=>{stop();state.g=Number(e.target.value);renderGeneration();});
+  $('g-direction').addEventListener('change',e=>{state.direction=e.target.value;reset('generate');});
+  $('g-kind').addEventListener('change',e=>{state.kind=e.target.value;reset('generate');});
+  $('c-step').addEventListener('input',e=>{stop();state.c=Number(e.target.value);renderCompare();});
+  $('c-rounds').addEventListener('input',e=>{state.rounds=Number(e.target.value);reset('compare');});
+  $('c-cost').addEventListener('input',e=>{stop();state.cost=Number(e.target.value);renderCompare();});
+  $('k-time').addEventListener('input',e=>{stop();state.time=Number(e.target.value);renderKernel();});
+  $('k-gamma').addEventListener('input',e=>{stop();state.gamma=Number(e.target.value);renderKernel();});
+  document.querySelectorAll('[data-kernel]').forEach(b=>b.addEventListener('click',()=>{stop();state.kernel=b.dataset.kernel;renderKernel();}));
+  $('p-freq').addEventListener('input',e=>{stop();state.freq=Number(e.target.value);renderPenalty();});$('p-sem').addEventListener('input',e=>{stop();state.sem=Number(e.target.value);renderPenalty();});
+  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{state.freq=b.dataset.preset==='none'?0:1.2;state.sem=b.dataset.preset==='both'?1.8:0;reset('paper');}));
+  $('p-mechanism').addEventListener('click',()=>paperView(false));$('p-evidence').addEventListener('click',()=>paperView(true));
+  $('e-dataset').addEventListener('change',e=>{state.dataset=e.target.value;renderEvidence();});
+  scenes.forEach((scene,i)=>{$('tab-'+scene).addEventListener('click',()=>chooseScene(scene));$('tab-'+scene).addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const next=scenes[(i+(e.key==='ArrowRight'?1:3))%4];chooseScene(next);$('tab-'+next).focus();}});});
+  $('fullscreen').addEventListener('click',fullscreen);document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'退出全屏 F':'全屏 F';});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest('button,input,select,textarea,a,summary,[role="button"],[contenteditable="true"]'))return;
+    if(/^[1-4]$/.test(e.key)){chooseScene(scenes[Number(e.key)-1]);return;}
+    if(e.key.toLowerCase()==='f'){e.preventDefault();fullscreen();return;}
+    if(state.scene==='paper'&&state.evidence)return;
+    if(e.key===' '){e.preventDefault();toggle(state.scene);}if(e.key==='ArrowRight'){e.preventDefault();stop();tick(state.scene);}if(e.key.toLowerCase()==='r')reset(state.scene);
+  });
+  buildGraph();renderGeneration();renderCompare();renderKernel();renderPenalty();renderEvidence();
+})();
+
+</script>
+</body>
+</html>
