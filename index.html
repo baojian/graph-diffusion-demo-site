@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="从单个节点出发，交互探索图上的热扩散、桥与连通性。单文件离线演示。">
+<title>图上的扩散 · 从一个节点出发</title>
+<style>
+:root{color-scheme:light;--paper:#fbfbf9;--ink:#202b38;--navy:#142e4b;--muted:#566471;--line:#ccd5dd;--blue:#20578c;--teal:#428e9c;--warm:#c95b34;--font:Arial,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 var(--font)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.45}button,input,select,summary{accent-color:var(--blue)}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.node:focus-visible{outline:3px solid var(--blue);outline-offset:4px}button{border:1px solid var(--line);border-radius:8px;color:var(--navy);background:white;padding:10px 16px;white-space:nowrap}button:hover{border-color:var(--blue);background:#f1f5f8}button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}[hidden]{display:none!important}main{width:min(1460px,94vw);margin:24px auto 18px}.topline{display:flex;align-items:center;justify-content:space-between;gap:16px}.eyebrow{font-size:13px;letter-spacing:.15em;font-weight:700;color:var(--blue)}.tools{display:flex;gap:8px}.tools button{padding:7px 12px;font-size:14px;background:transparent}.heading{margin:18px 0 22px}h1{font-size:clamp(28px,3.2vw,46px);line-height:1.2;letter-spacing:-.035em;font-weight:600;color:var(--navy);margin:0 0 10px}.subtitle{color:var(--muted);margin:0;font-size:18px}.setup{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;flex-wrap:wrap}.presets{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.field-label{font-size:14px;color:var(--muted);margin-right:5px}.bridge-control{display:flex;align-items:center;gap:12px;font-size:15px}.bridge-control input{width:135px}.bridge-control output{min-width:36px;font-variant-numeric:tabular-nums;color:var(--blue)}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 284px;gap:24px;align-items:stretch}.stage{background:white;border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0;position:relative}.stage-top{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 0;gap:15px}.stage-top p{margin:0;font-size:15px;color:var(--muted)}.clock{color:var(--navy);font:20px/1.2 "SFMono-Regular",Consolas,monospace;white-space:nowrap}.graph{width:100%;height:auto;display:block;aspect-ratio:940/480;touch-action:manipulation}.node{cursor:pointer}.node .hit{fill:transparent}.node circle.core{stroke:white;stroke-width:2}.node:hover .halo,.node:focus .halo{stroke:var(--blue);stroke-width:3;opacity:1}.node text{font:18px var(--font);font-weight:600;fill:var(--navy);pointer-events:none;text-anchor:middle;dominant-baseline:central}.node.source .halo{stroke:var(--warm);stroke-width:2.5;stroke-dasharray:4 4;opacity:1}.node .halo{fill:none;stroke:transparent;opacity:0}.group-label{font:16px var(--font);fill:#657d8d;letter-spacing:2px}.bridge-note{font:15px var(--font);fill:var(--muted);text-anchor:middle}.legend{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 20px 16px;font-size:13px;color:var(--muted)}.color-key{width:220px;max-width:45%}.color-bar{height:8px;border-radius:5px;background:linear-gradient(90deg,#e7edf2,#b6d9df,#559caa,#f3b568,#ca5a34)}.color-labels{display:flex;justify-content:space-between;margin-top:5px}.legend-note{max-width:360px}.side{display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding:5px 0}.side h2{font-size:21px;font-weight:600;margin:0 0 8px;color:var(--navy)}.source-line{font-size:17px;margin:0 0 7px}.source-dot{display:inline-block;width:10px;height:10px;margin-right:7px;border-radius:50%;background:var(--warm)}.side p{margin:6px 0;color:var(--muted);font-size:15px}.stat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid #e2e7eb}.stat span{font-size:15px;color:var(--muted)}.stat strong{font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--navy)}.curve{width:100%;display:block;margin-top:6px;overflow:visible}.equation{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:29px;color:var(--navy);letter-spacing:.01em;margin:8px 0}.note-box{border-left:3px solid var(--teal);padding-left:13px}.controls{display:flex;align-items:center;gap:10px;margin:18px 0 10px;flex-wrap:wrap}.primary{background:var(--blue);color:white;border-color:var(--blue);min-width:125px}.primary:hover{background:var(--navy);color:white}.controls select{background:white;border:1px solid var(--line);color:var(--navy);border-radius:7px;padding:10px}.timeline{flex:1;min-width:170px;display:flex;align-items:center;gap:12px;padding:0 12px}.timeline input{width:100%;min-width:100px}.time-end{font:13px Consolas,monospace;color:var(--muted);white-space:nowrap}.caption{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:15px 0 0;padding-top:14px;border-top:1px solid var(--line)}.caption p{font-size:14px;margin:0;color:var(--muted)}kbd{font:12px var(--font);padding:2px 5px;border:1px solid var(--line);border-radius:3px;background:white}.status{min-height:22px;font-size:14px;color:var(--blue);margin-top:8px}.mobile-source{display:none}dialog{max-width:760px;width:calc(100vw - 36px);max-height:88vh;padding:28px;border:1px solid var(--line);border-radius:14px;color:var(--ink);background:var(--paper)}dialog::backdrop{background:rgb(20 46 75 / 35%)}dialog h2{color:var(--navy);margin-top:0;font-size:28px}dialog h3{font-size:20px;margin-bottom:6px;color:var(--navy)}dialog p,dialog li{font-size:16px}dialog li{margin-bottom:8px}dialog .equation{font-size:27px;text-align:center;padding:10px 0}.dialog-head{display:flex;justify-content:space-between;gap:20px;align-items:start}.dialog-head button{padding:5px 12px}.formula-detail{background:#eef3f6;border-radius:8px;padding:14px 18px;line-height:1.8}.math{font-family:Georgia,"Times New Roman",serif}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}a{color:var(--blue)}body:fullscreen main{width:min(1600px,96vw)}@media(min-width:1600px){.workspace{grid-template-columns:minmax(0,1fr) 320px}.side p{font-size:18px}.side h2{font-size:24px}.stat span{font-size:18px}}@media(max-width:1000px){.workspace{grid-template-columns:minmax(0,1fr) 235px;gap:18px}.stage-top{padding:12px 15px 0}.stage-top p{font-size:13px}.side h2{font-size:19px}.stat strong{font-size:21px}.legend-note{font-size:11px}.note-box p{font-size:13px}}@media(max-width:760px){main{width:94vw;margin-top:16px}.eyebrow{font-size:10px;letter-spacing:.09em}.tools button{font-size:12px;padding:6px 8px}.heading{margin:20px 0}.subtitle{font-size:16px}.setup{gap:12px}.presets button{font-size:14px;padding:9px 11px}.workspace{grid-template-columns:1fr;gap:18px}.side{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:0}.side .explanation{grid-column:1/-1}.side .curve-block{display:none}.stat{padding:8px 0}.legend{padding:0 12px 12px}.stage-top{padding:12px 12px 0}.stage-top p{font-size:12px}.clock{font-size:16px}.legend-note{max-width:48%}.timeline{order:5;flex-basis:100%;padding:8px 0 0}.controls button,.controls select{font-size:15px;padding:9px 12px}.controls .speed-label{margin-left:auto}.caption{flex-direction:column;gap:8px}.caption .shortcuts{display:none}.graph{min-height:240px}.bridge-control{font-size:14px}.bridge-control input{width:130px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}@media print{.tools,.setup,.controls,.caption,.status,dialog{display:none}main{width:100%;margin:0}.workspace{grid-template-columns:minmax(0,1fr) 240px}.stage{break-inside:avoid}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style>
+<style>
+/* A compact projector view, inspired by the course's full-screen viewer. */
+.display-settings{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 16px}
+.display-settings button{font-size:14px;padding:7px 12px}
+.contrast-control{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--muted);margin-left:auto}
+.color-bar{background:linear-gradient(90deg,#304c99,#61b7d3,#f8df8a,#f08a43,#b91f35)}
+.color-key{width:255px;max-width:48%}.color-labels{font-variant-numeric:tabular-nums;font-size:12px}
+.node.source .halo{stroke:#8d293c}
+@media (min-width:900px) {
+  html:fullscreen main{width:96vw;margin:8px auto}
+  html:fullscreen .heading,html:fullscreen .caption{display:none}
+  html:fullscreen .tools button{padding:4px 9px}
+  html:fullscreen .setup{margin:10px 0}
+  html:fullscreen .presets button{padding:6px 12px;font-size:15px}
+  html:fullscreen .workspace{height:calc(100dvh - 240px);min-height:320px}
+  html:fullscreen .display-settings{margin:0 0 9px}
+  html:fullscreen .stage{display:flex;flex-direction:column}
+  html:fullscreen .stage-top{padding:8px 15px 0}
+  html:fullscreen .graph{flex:1;min-height:0;height:0;aspect-ratio:auto}
+  html:fullscreen .legend{padding-bottom:10px}
+  html:fullscreen .controls{margin:10px 0}
+  html:fullscreen .status{margin-top:4px}
+}
+@media (min-width:900px) and (max-height:800px) {
+  html:fullscreen .curve-block{display:none}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="topline"><span class="eyebrow">GRAPH DIFFUSION / 图上的扩散</span><div class="tools"><button id="theory-open" type="button">查看原理</button><button id="fullscreen" type="button">全屏 <span aria-hidden="true">F</span></button></div></div>
+  <header class="heading"><h1>从一个节点，扩散到整个图</h1><p id="subtitle" class="subtitle">从一个热源出发，观察温暖怎样沿着边传向远方。</p></header>
+  <section class="setup" aria-label="图的设置">
+    <div class="presets" role="group" aria-label="选择图结构"><span class="field-label">图结构</span><button type="button" data-graph="communities" aria-pressed="true">两个社区与一座桥</button><button type="button" data-graph="grid" aria-pressed="false">网格</button><button type="button" data-graph="ring" aria-pressed="false">环</button></div>
+    <div class="bridge-control" id="bridge-control"><label for="bridge">桥的强度</label><input id="bridge" type="range" min="0" max="3" step="0.05" value="1"><output id="bridge-output" for="bridge">1.00</output></div>
+  </section>
+  <div class="display-settings" role="group" aria-label="扩散方式与颜色"><span class="field-label">扩散方式</span><button type="button" data-mode="source" aria-pressed="true">持续热源</button><button type="button" data-mode="pulse" aria-pressed="false">单次释放</button><label class="contrast-control" for="contrast"><input id="contrast" type="checkbox" checked>增强颜色对比</label></div>
+  <div class="workspace">
+    <section class="stage" aria-label="扩散图与颜色说明">
+      <div class="stage-top"><p id="graph-description">32 个节点 · 49 条边 · 点击任意节点重新出发</p><output class="clock" id="time" aria-label="扩散时间">t = 0.00</output></div>
+      <svg id="graph" class="graph" viewBox="0 0 940 480" role="group" aria-label="可交互扩散图，选择节点可重新设置起点"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#428e9c"/></marker></defs><g id="regions"></g><g id="edges" aria-hidden="true"></g><g id="nodes"></g></svg>
+      <div class="legend"><div class="color-key"><div class="color-bar"></div><div class="color-labels"><span id="color-low">冷 · 0</span><span id="color-high">1 · 热</span></div></div><span id="legend-note" class="legend-note">增强对比：蓝色较冷，红色较热；图例显示当前热量范围。</span></div>
+    </section>
+    <aside class="side" aria-label="当前扩散状态">
+      <div><h2>一份热量的旅程</h2><div class="source-line"><span class="source-dot"></span>起点 <strong id="source-label">6</strong><span id="source-area"> · 社区 A</span></div><p id="phase">热量集中在起点，等待开始。</p></div>
+      <div><div class="stat"><span>总热量</span><strong id="mass">1.000000</strong></div><div class="stat"><span>起点剩余</span><strong id="source-mass">100.0%</strong></div><div class="stat"><span>与平衡的差距</span><strong id="distance">96.9%</strong></div></div>
+      <div class="curve-block"><p>与平衡的差距随时间减小</p><svg id="curve" class="curve" viewBox="0 0 284 110" role="img" aria-label="纵轴为与平衡分布的总变差距离，横轴为扩散时间"><path d="M 28 8 V 88 H 270" fill="none" stroke="#ccd5dd"/><text x="0" y="15" font-size="11" fill="#566471">100%</text><text x="14" y="92" font-size="11" fill="#566471">0</text><text x="26" y="107" font-size="11" fill="#566471">0</text><text id="curve-end" x="270" y="107" text-anchor="end" font-size="11" fill="#566471">t</text><path id="curve-path" fill="none" stroke="#428e9c" stroke-width="2.5"/><circle id="curve-dot" r="4" fill="#c95b34"/></svg></div>
+      <div class="explanation note-box"><div id="equation" class="equation">du/dt = −Lu<br>+ μ(e<sub>s</sub> − u)</div><p id="model-note">起点持续补给，各节点同时散热。热源附近保留稳定的热量梯度。</p><p id="equilibrium-note">持续注入与均匀衰减，μ = 0.25。</p></div>
+    </aside>
+  </div>
+  <section class="controls" aria-label="播放控制">
+    <button id="play" class="primary" type="button" aria-pressed="false">▶ 开始扩散</button><button id="step" type="button">前进一步</button><button id="reset" type="button">重置</button>
+    <div class="timeline"><label class="sr-only" for="timeline">扩散时间轴</label><span class="time-end">0</span><input id="timeline" type="range" min="0" max="1000" step="1" value="0"><span id="horizon-label" class="time-end">t = 120</span></div>
+    <label class="sr-only speed-label" for="speed">播放速度</label><select id="speed" aria-label="播放速度"><option value="0.25">0.25× 慢放</option><option value="0.5">0.5× 慢放</option><option value="1" selected>1× 速度</option><option value="2">2× 速度</option><option value="4">4× 速度</option></select>
+  </section>
+  <div class="caption"><p id="experiment-hint">试一试：减小桥的强度，再观察热量跨越两个社区的过程。</p><p class="shortcuts"><kbd>空格</kbd> 播放 / 暂停　<kbd>→</kbd> 单步　<kbd>R</kbd> 重置　<kbd>F</kbd> 全屏</p></div>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+  <noscript><p>此演示需要浏览器启用 JavaScript。文件可完全离线运行。</p></noscript>
+</main>
+<dialog id="theory" aria-labelledby="theory-title"><div class="dialog-head"><h2 id="theory-title">一条边上的交换，就是扩散</h2><button id="theory-close" type="button" aria-label="关闭原理说明">关闭</button></div>
+  <p>这是一个教学用小图：无向边的权重表示热量交换的强度。每个节点具有相同容量，只有起点的初始热量为 1，其余为 0。可以选择两种过程：</p><ul><li><strong>持续热源（默认）</strong>：起点以速率 μ 补给，每个节点以速率 μuᵢ 散热，μ = 0.25。总热量仍为 1，但平衡时热源周围保留梯度。</li><li><strong>单次释放</strong>：只有初始热量，没有后续补给和损耗；连通图最终均匀。</li></ul>
+  <div class="formula-detail"><span class="math">duᵢ/dt = Σⱼ wᵢⱼ (uⱼ − uᵢ)</span><br>邻居比我热，就流入；我比邻居热，就流出。每条边两端的变化正好相反，因此总热量保持为 1。</div>
+  <h3>把所有节点放进一个向量</h3><div class="equation">L = D − W,　u(t) = e<sup>−tL</sup>e<sub>s</sub></div><p>上式对应“单次释放”。<span class="math">W</span> 是对称加权邻接矩阵，<span class="math">D</span> 的对角线是加权度数，<span class="math">e<sub>s</sub></span> 表示单点初值。连通图最终均分热量；断开桥后，只在起点所属的连通分量内均分。持续热源则由下方的有源方程描述。</p>
+  <h3>画面怎样读</h3><ul><li>节点数字是编号；悬停或键盘聚焦可查看热量。虚线圆环标记起点，点击任何节点都会暂停并重置。</li><li>箭头表示当前净热流方向；移动亮点只辅助观察流向，不代表独立粒子或精确流速。</li><li>增强对比默认开启：按当前热量范围映射蓝—黄—橙—红，图例实时标注上下限。热源附近通常较热，但热量还取决于图的连接方式，不按几何距离着色。</li><li>为避免把接近平衡时的极小误差夸大，色标跨度至少为平均热量的 8%；均匀热量仍显示为同色。关闭增强对比后，使用固定的对数色标，便于跨时刻比较。节点大小始终使用固定的对数刻度。</li><li>“与平衡的差距”是总变差距离：½ Σᵢ |uᵢ − uᵢ*|，平衡分布取决于所选模式。</li><li>连续时间热扩散在连通图上对任何 t &gt; 0 都有正热量；视觉上“尚未到达”通常只是数值很小。这个动画不是逐层点亮的搜索算法。</li><li>时间轴是实际的无量纲扩散时间 t。每种图自动选取展示区间；播放倍速只影响观看速度，不改变同一 t 的数学结果。</li></ul>
+  <p>为看清最初几次局部交换，播放采用前段慢放、后段加速；请以显示的 t 比较不同图。拖动时间轴或“前进一步”可以直接指定扩散时间。</p>
+  <h3>持续热源与稀疏线性系统</h3><p>持续热源使用 <span class="math">du/dt = μe<sub>s</sub> − (L + μI)u</span>，平衡态满足 <span class="math">(L + μI)u* = μe<sub>s</sub></span>。补给和散热的总速率相等，因此总热量为 1。稳定梯度来自这个过程，不是额外按距离涂色。</p>
+  <p>本演示直接计算小图的热核，不代表大规模局部求解算法的性能。参考：<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2148367/" target="_blank" rel="noopener noreferrer">Chung, The heat kernel as the pagerank of a graph</a>。注意该文也讨论归一化约定；本页采用组合拉普拉斯 L = D − W。</p>
+</dialog>
+<script id="diffusion-engine">
+/* Pure numerical model. The Node tests load this exact embedded engine. */
+globalThis.GraphDiffusion = (() => {
+  'use strict';
+  function makeGraph(kind = 'communities', bridge = 1) {
+    if (!Number.isFinite(bridge) || bridge < 0) throw new RangeError('Invalid bridge weight');
+    const nodes = [], edges = [];
+    const edge = (a, b, w = 1, isBridge = false) => edges.push({a,b,w,isBridge});
+    let source = 0;
+    if (kind === 'communities') {
+      for (let group = 0; group < 2; group++) {
+        const base = group * 16;
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+          nodes.push({x: 92 + group * 512 + c * 77, y: 92 + r * 98 + (c % 2 ? 7 : -7), group});
+          const i = base + r * 4 + c;
+          if (c > 0) edge(i - 1, i);
+          if (r > 0) edge(i - 4, i);
+        }
+      }
+      edge(7, 20, bridge, true); source = 5;
+    } else if (kind === 'grid') {
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++) {
+        const i = r * 7 + c;
+        nodes.push({x: 140 + 110 * c, y: 60 + 90 * r});
+        if (c > 0) edge(i - 1, i);
+        if (r > 0) edge(i - 7, i);
+      }
+      source = 17;
+    } else if (kind === 'ring') {
+      for (let i = 0; i < 24; i++) {
+        const angle = 2 * Math.PI * i / 24 - Math.PI / 2;
+        nodes.push({x: 470 + 356 * Math.cos(angle), y: 240 + 184 * Math.sin(angle)});
+        edge(i, (i + 1) % 24);
+      }
+    } else throw new RangeError('Unknown graph');
+    return {kind, nodes, edges, source};
+  }
+  function laplacian(graph) {
+    const n = graph.nodes.length;
+    const matrix = Array.from({length:n}, () => Array(n).fill(0));
+    for (const {a,b,w} of graph.edges) {
+      if (!Number.isFinite(w) || w < 0 || a === b || !matrix[a] || !matrix[b]) throw new RangeError('Invalid edge');
+      matrix[a][a] += w; matrix[b][b] += w; matrix[a][b] -= w; matrix[b][a] -= w;
+    }
+    return matrix;
+  }
+  // Cyclic Jacobi rotations for the small real symmetric Laplacian.
+  function eigenSymmetric(matrix) {
+    const n = matrix.length, a = matrix.map(row => row.slice());
+    const v = Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) => i === j ? 1 : 0));
+    const scale = Math.max(1, ...a.map((row,i) => Math.abs(row[i])));
+    const tolerance = 2e-14 * scale;
+    let converged = false;
+    for (let sweep = 0; sweep < 80; sweep++) {
+      let largest = 0;
+      for (let p = 0; p < n - 1; p++) for (let q = p + 1; q < n; q++) {
+        const apq = a[p][q]; largest = Math.max(largest, Math.abs(apq));
+        if (Math.abs(apq) <= tolerance) continue;
+        const tau = (a[q][q] - a[p][p]) / (2 * apq);
+        const t = (tau >= 0 ? 1 : -1) / (Math.abs(tau) + Math.hypot(1, tau));
+        const c = 1 / Math.hypot(1, t), s = t * c;
+        a[p][p] -= t * apq; a[q][q] += t * apq;
+        a[p][q] = a[q][p] = 0;
+        for (let k = 0; k < n; k++) {
+          if (k !== p && k !== q) {
+            const akp = a[k][p], akq = a[k][q];
+            a[k][p] = a[p][k] = c * akp - s * akq;
+            a[k][q] = a[q][k] = s * akp + c * akq;
+          }
+          const vkp = v[k][p], vkq = v[k][q];
+          v[k][p] = c * vkp - s * vkq; v[k][q] = s * vkp + c * vkq;
+        }
+      }
+      if (largest <= tolerance) { converged = true; break; }
+    }
+    if (!converged) throw new Error('Eigendecomposition did not converge');
+    const order = Array.from({length:n}, (_,i) => i).sort((i,j) => a[i][i] - a[j][j]);
+    return {values: order.map(i => Math.abs(a[i][i]) < tolerance * 10 ? 0 : a[i][i]), vectors: v.map(row => order.map(i => row[i]))};
+  }
+  function component(graph, source) {
+    if (!Number.isInteger(source) || source < 0 || source >= graph.nodes.length) throw new RangeError('Invalid source');
+    const neighbors = Array.from({length:graph.nodes.length}, () => []);
+    graph.edges.forEach(({a,b,w}) => {if (w > 0) {neighbors[a].push(b); neighbors[b].push(a);}});
+    const seen = new Set([source]), queue = [source];
+    for (let i = 0; i < queue.length; i++) for (const j of neighbors[queue[i]]) if (!seen.has(j)) {seen.add(j); queue.push(j);}
+    return seen;
+  }
+  function equilibrium(graph, source) {
+    const active = component(graph, source);
+    return graph.nodes.map((_,i) => active.has(i) ? 1 / active.size : 0);
+  }
+  function heat(spectrum, source, time, decay = 0) {
+    const n = spectrum.values.length;
+    if (!Number.isFinite(time) || time < 0) throw new RangeError('Invalid time');
+    if (!Number.isFinite(decay) || decay < 0) throw new RangeError('Invalid decay');
+    if (!Number.isInteger(source) || source < 0 || source >= n) throw new RangeError('Invalid source');
+    if (time === 0) return Array.from({length:n}, (_,i) => i === source ? 1 : 0);
+    const coefficients = spectrum.values.map((lambda,k) => {
+      const steady = decay > 0 ? decay / (lambda + decay) : 0;
+      return (steady + (1 - steady) * Math.exp(-(lambda + decay) * time)) * spectrum.vectors[source][k];
+    });
+    const u = spectrum.vectors.map(row => row.reduce((sum,value,k) => sum + value * coefficients[k], 0));
+    // Remove roundoff only; do not normalize away numerical errors.
+    return u.map(value => {if (value < -1e-10) throw new Error('Negative heat beyond roundoff'); return Math.max(0, value);});
+  }
+  function sourceEquilibrium(spectrum, source, decay) {
+    if (!Number.isFinite(decay) || decay <= 0) throw new RangeError('Invalid decay');
+    if (!Number.isInteger(source) || source < 0 || source >= spectrum.values.length) throw new RangeError('Invalid source');
+    const coefficients = spectrum.values.map((lambda,k) => decay / (lambda + decay) * spectrum.vectors[source][k]);
+    return spectrum.vectors.map(row => Math.max(0,row.reduce((sum,value,k) => sum + value * coefficients[k],0)));
+  }
+  function colorScale(values, enhanced = true) {
+    if (!enhanced) return {low:0,high:1,levels:values.map(value => Math.log1p(16*values.length*Math.max(0,value))/Math.log1p(16*values.length))};
+    const min=Math.min(...values),max=Math.max(...values),mean=values.reduce((a,b)=>a+b,0)/values.length;
+    const span=Math.max(max-min,.08*mean,1e-12),middle=(max+min)/2;
+    const low=middle-span/2,high=middle+span/2;
+    return {low,high,levels:values.map(value=>Math.min(1,Math.max(0,(value-low)/span)))};
+  }
+  function distance(u, target) {return u.reduce((sum,value,i) => sum + Math.abs(value - target[i]), 0) / 2;}
+  function horizon(spectrum, decay = 0) {
+    const gap = spectrum.values.find(value => value > 1e-10);
+    return gap ? Math.max(12, Math.ceil(5 / (gap + decay))) : 12;
+  }
+  return Object.freeze({makeGraph, laplacian, eigenSymmetric, component, equilibrium, sourceEquilibrium, heat, colorScale, distance, horizon});
+})();
+</script>
+<script id="diffusion-ui">
+(() => {
+  'use strict';
+  const model = globalThis.GraphDiffusion;
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = (tag, attrs, text) => {
+    const node = document.createElementNS(NS, tag);
+    Object.entries(attrs || {}).forEach(([key,value]) => node.setAttribute(key, value));
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const state = {kind:'communities', mode:'source', enhanced:true, bridge:1, source:5, time:0, playing:false, speed:1, lastFrame:null, frameId:0, particleClock:0};
+  const decay = () => state.mode === 'source' ? .25 : 0;
+  let graph, spectrum, target, endTime, nodeViews = [], edgeViews = [], curveSamples = [];
+  const palette = [[48,76,153],[97,183,211],[248,223,138],[240,138,67],[185,31,53]];
+  const intensity = value => Math.log1p(16 * graph.nodes.length * Math.max(0,value)) / Math.log1p(16 * graph.nodes.length);
+  function color(level) {
+    const x = Math.min(1,Math.max(0,level)) * (palette.length - 1);
+    const i = Math.min(palette.length - 2, Math.floor(x)), f = x - i;
+    const rgb = palette[i].map((c,k) => Math.round(c + (palette[i+1][k] - c)*f));
+    const linear=rgb.map(c=>{const v=c/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});
+    const luminance=.2126*linear[0]+.7152*linear[1]+.0722*linear[2];
+    return {fill:'rgb('+rgb.join(',')+')',text:luminance<.21?'#fff':'#102030'};
+  }
+  const percent = value => (100 * value).toFixed(1) + '%';
+  const precise = value => value === 0 ? '0' : value < 1e-5 ? value.toExponential(3) : value.toFixed(6);
+  function stop() {
+    state.playing = false; state.lastFrame = null;
+    cancelAnimationFrame(state.frameId);
+    $('play').textContent = state.time >= endTime ? '↻ 再播放一次' : state.time > 0 ? '▶ 继续扩散' : '▶ 开始扩散';
+    $('play').setAttribute('aria-pressed','false');
+  }
+  function reset(announce = true) {
+    stop(); state.time = 0; state.particleClock = 0; stop(); render();
+    if (announce) $('status').textContent = '已重置：全部热量回到节点 ' + (state.source+1) + '。';
+  }
+  function prepareCurve() {
+    target = decay() > 0 ? model.sourceEquilibrium(spectrum,state.source,decay()) : model.equilibrium(graph, state.source);
+    curveSamples = Array.from({length:161}, (_,i) => {
+      const t = .5 * (Math.exp(i / 160 * Math.log1p(2 * endTime)) - 1);
+      return {t, d:model.distance(model.heat(spectrum,state.source,t,decay()),target)};
+    });
+  }
+  function selectSource(index) {
+    state.source = index; prepareCurve(); reset(false);
+    $('status').textContent = '起点已改为节点 ' + (index+1) + '。按“开始扩散”观察传播。';
+  }
+  function buildGraph() {
+    $('regions').replaceChildren(); $('edges').replaceChildren(); $('nodes').replaceChildren();
+    if (state.kind === 'communities') {
+      for (let i=0;i<2;i++) {
+        $('regions').append(svg('rect',{x:48+i*512,y:44,width:324,height:398,rx:32,fill:'#f4f7f9'}));
+        $('regions').append(svg('text',{x:62+i*512,y:31,class:'group-label'},'社区 '+(i===0?'A':'B')));
+      }
+      $('regions').append(svg('text',{x:464,y:158,class:'bridge-note'},state.bridge===0?'桥已断开':'唯一的桥 · w = '+state.bridge.toFixed(2)));
+    }
+    edgeViews = graph.edges.map(edge => {
+      const a = graph.nodes[edge.a], b = graph.nodes[edge.b];
+      const base = svg('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:edge.w===0?'#cdd6dc':edge.isBridge?'#8eabb7':'#d7e1e7','stroke-width':edge.isBridge?2.5:1.8});
+      if (edge.w===0) base.setAttribute('stroke-dasharray','6 8');
+      const flow = svg('line',{stroke:'#428e9c','stroke-width':2,'marker-end':'url(#arrowhead)'});
+      const particle = svg('circle',{r:3.3,fill:'#c95b34'});
+      $('edges').append(base,flow,particle); return {edge,flow,particle};
+    });
+    nodeViews = graph.nodes.map((node,i) => {
+      const group = svg('g',{class:'node',tabindex:0,role:'button','aria-label':'以节点 '+(i+1)+' 为起点',transform:'translate('+node.x+' '+node.y+')'});
+      const hit = svg('circle',{r:29,class:'hit'}), halo = svg('circle',{r:26,class:'halo'});
+      const core = svg('circle',{r:17,class:'core'}), label = svg('text',{x:0,y:0},i+1), title = svg('title',{});
+      group.append(title,hit,halo,core,label); group.addEventListener('click',()=>selectSource(i));
+      group.addEventListener('keydown', event => {if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();selectSource(i);}});
+      group.addEventListener('focus',()=>{$('status').textContent='节点 '+(i+1)+'：热量 '+precise(model.heat(spectrum,state.source,state.time,decay())[i])+'。按 Enter 设为起点。';});
+      $('nodes').append(group); return {group,halo,core,label,title};
+    });
+    const edgeCount = graph.edges.filter(edge=>edge.w>0).length;
+    $('graph-description').textContent = graph.nodes.length+' 个节点 · '+edgeCount+' 条边 · 点击任意节点重新出发';
+  }
+  function setup(kind, keepSource = false) {
+    stop(); state.kind = kind;
+    graph = model.makeGraph(kind,state.bridge);
+    spectrum = model.eigenSymmetric(model.laplacian(graph));
+    state.source = keepSource ? Math.min(state.source,graph.nodes.length-1) : graph.source;
+    endTime = model.horizon(spectrum,decay());
+    $('timeline').max = String(endTime); $('timeline').step = String(endTime / 2000);
+    $('horizon-label').textContent = 't = '+endTime; $('curve-end').textContent = 't = '+endTime;
+    $('bridge-control').hidden = kind !== 'communities';
+    document.querySelectorAll('[data-graph]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.graph===kind)));
+    document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===state.mode)));
+    $('subtitle').textContent=state.mode==='source'?'起点持续补给，热量沿边传播；稳定后，热源附近依然温暖。':'一次释放一份热量，观察它沿边传播，并逐渐达到均匀平衡。';
+    $('equation').innerHTML=state.mode==='source'?'du/dt = −Lu<br>+ μ(e<sub>s</sub> − u)':'du/dt = −Lu';
+    $('model-note').textContent=state.mode==='source'?'起点持续补给，各节点同时散热。热源附近保留稳定的热量梯度。':'每个节点只和邻居交换热量。局部变化逐渐形成整体的均匀平衡。';
+    $('experiment-hint').textContent = kind==='communities'?'试一试：减小桥的强度；设为 0 时，热量无法跨越两个社区。':kind==='grid'?'试一试：比较从角落和中心出发，热量向周围铺开的过程。':state.mode==='source'?'试一试：热量沿环的两个方向传播，观察离热源越远、热量越少的稳定分布。':'试一试：热量沿环的两个方向传播，最后在所有节点之间均分。';
+    prepareCurve(); buildGraph(); reset(false);
+  }
+  function render() {
+    const u = model.heat(spectrum,state.source,state.time,decay()), gap = model.distance(u,target);
+    const scale=model.colorScale(u,state.enhanced);
+    $('color-low').textContent='冷 · '+precise(scale.low);$('color-high').textContent=precise(scale.high)+' · 热';
+    $('legend-note').textContent=state.enhanced?'增强对比：蓝色较冷、红色较热。色标随当前热量范围调整。':'固定色标 0–1（对数增强），可直接比较不同时刻的颜色。';
+    nodeViews.forEach((view,i)=>{
+      const radius = 13 + 10 * intensity(u[i]);
+      const ink=color(scale.levels[i]);
+      view.core.setAttribute('r',radius); view.core.setAttribute('fill',ink.fill);
+      view.label.setAttribute('style','fill:'+ink.text);
+      view.group.classList.toggle('source',i===state.source); view.group.setAttribute('aria-pressed',String(i===state.source));
+      view.title.textContent='节点 '+(i+1)+' · 热量 '+precise(u[i])+(i===state.source?' · 初始起点':'');
+      view.group.setAttribute('aria-description','热量 '+precise(u[i]));
+    });
+    edgeViews.forEach(({edge,flow,particle},i)=>{
+      const flux = edge.w*(u[edge.a]-u[edge.b]), strength = Math.abs(flux);
+      const alpha = Math.min(.85,Math.log1p(strength*500)/6);
+      if (strength<1e-10 || edge.w===0) {flow.setAttribute('opacity','0');particle.setAttribute('opacity','0');return;}
+      const from = graph.nodes[flux>0?edge.a:edge.b], to = graph.nodes[flux>0?edge.b:edge.a];
+      const dx=to.x-from.x,dy=to.y-from.y,len=Math.hypot(dx,dy),start=25/len,end=1-25/len;
+      flow.setAttribute('x1',from.x+dx*start);flow.setAttribute('y1',from.y+dy*start);
+      flow.setAttribute('x2',from.x+dx*end);flow.setAttribute('y2',from.y+dy*end);flow.setAttribute('opacity',alpha);
+      const phase = reducedMotion ? .5 : ((state.particleClock*.5+i*.193)%1);
+      const fraction = start+(end-start)*phase;
+      particle.setAttribute('cx',from.x+dx*fraction);particle.setAttribute('cy',from.y+dy*fraction);particle.setAttribute('opacity',alpha);
+    });
+    $('time').textContent='t = '+state.time.toFixed(2);
+    $('timeline').value=String(state.time);$('timeline').setAttribute('aria-valuetext','扩散时间 '+state.time.toFixed(2));
+    $('mass').textContent=u.reduce((sum,x)=>sum+x,0).toFixed(6);
+    $('source-mass').textContent=percent(u[state.source]);$('distance').textContent=percent(gap);
+    $('source-label').textContent=String(state.source+1);
+    $('source-area').textContent=state.kind==='communities'?' · 社区 '+(state.source<16?'A':'B'):'';
+    const size=model.component(graph,state.source).size;
+    $('equilibrium-note').textContent=state.mode==='source'?(size<graph.nodes.length?'桥已断开：热量留在起点所属社区。':'持续注入与均匀衰减，μ = 0.25。'):(size===graph.nodes.length?'连通时，每个节点最终分得 1/'+size+'。':'桥已断开：热量只在起点所在的 '+size+' 个节点之间均分。');
+    $('phase').textContent=state.time===0?'热量集中在起点，等待开始。':gap<.01?(state.mode==='source'?'已接近有源平衡，热源周围保留温差。':'已接近平衡，节点间的净热流很小。'):state.kind==='communities'&&state.bridge===0?'热量在起点所属社区内传播。':'热量从高值节点流向低值邻居。';
+    const points=curveSamples.filter(point=>point.t<state.time).concat([{t:state.time,d:gap}]);
+    $('curve-path').setAttribute('d',points.map((point,i)=>(i?'L':'M')+(28+242*point.t/endTime).toFixed(2)+' '+(88-80*point.d).toFixed(2)).join(' '));
+    $('curve-dot').setAttribute('cx',28+242*state.time/endTime);$('curve-dot').setAttribute('cy',88-80*gap);
+  }
+  function frame(timestamp) {
+    if(!state.playing)return;
+    if(state.lastFrame!==null){
+      const elapsed=Math.min((timestamp-state.lastFrame)/1000,.1);
+      // Slow early time to make the initial local exchange visible, then accelerate.
+      state.time=Math.min(endTime,(state.time+.5)*Math.exp(.24*elapsed*state.speed)-.5);
+      state.particleClock+=elapsed*state.speed;
+    }
+    state.lastFrame=timestamp;render();
+    if(state.time>=endTime){stop();$('status').textContent='已到达展示区间末端。可以拖动时间轴回看，或重新播放。';return;}
+    state.frameId=requestAnimationFrame(frame);
+  }
+  function toggle() {
+    if(state.playing){stop();return;}
+    if(state.time>=endTime)reset(false);
+    state.playing=true;state.lastFrame=null;$('play').textContent='Ⅱ 暂停';$('play').setAttribute('aria-pressed','true');
+    $('status').textContent='前段慢放、后段加速；屏幕上的 t 是实际扩散时间。';
+    state.frameId=requestAnimationFrame(frame);
+  }
+  function step() {stop();state.time=Math.min(endTime,state.time+.25);render();stop();$('status').textContent='前进一步：t = '+state.time.toFixed(2)+'。';}
+  async function fullscreen() {
+    try {
+      if(document.fullscreenElement)await document.exitFullscreen();
+      else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();
+      else throw new Error('Unavailable');
+    } catch {$('status').textContent='当前浏览器不支持网页全屏，请使用浏览器菜单中的全屏功能。';}
+  }
+  document.querySelectorAll('[data-graph]').forEach(button=>button.addEventListener('click',()=>{setup(button.dataset.graph);$('status').textContent='已切换图结构，点击节点可选择起点。';}));
+  document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{state.mode=button.dataset.mode;setup(state.kind,true);$('status').textContent=state.mode==='source'?'持续热源：起点补给、全图散热，稳定后仍保留梯度。':'单次释放：没有后续补给，连通图最终均分热量。';}));
+  $('contrast').addEventListener('change',()=>{state.enhanced=$('contrast').checked;render();});
+  $('bridge').addEventListener('input',()=>{state.bridge=Number($('bridge').value);$('bridge-output').textContent=state.bridge.toFixed(2);setup('communities',true);$('status').textContent=state.bridge===0?'桥已断开；扩散只发生在起点所属的社区。':'桥的强度已改为 '+state.bridge.toFixed(2)+'，扩散已重置。';});
+  $('play').addEventListener('click',toggle);$('reset').addEventListener('click',()=>reset());$('step').addEventListener('click',step);
+  $('timeline').addEventListener('input',()=>{stop();state.time=Number($('timeline').value);render();stop();});
+  $('speed').addEventListener('change',()=>{state.speed=Number($('speed').value);});
+  $('fullscreen').addEventListener('click',fullscreen);
+  document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'退出全屏 F':'全屏 F';});
+  $('theory-open').addEventListener('click',()=>{stop();$('theory').showModal();});$('theory-close').addEventListener('click',()=>{$('theory').close();});
+  document.addEventListener('keydown',event=>{
+    if(event.altKey||event.ctrlKey||event.metaKey||$('theory').open)return;
+    const target=event.target;
+    if(target.closest('input,select,button,[role="button"],a,[contenteditable="true"]'))return;
+    if(event.key===' '){event.preventDefault();toggle();}
+    else if(event.key==='ArrowRight'){event.preventDefault();step();}
+    else if(event.key.toLowerCase()==='r'){event.preventDefault();reset();}
+    else if(event.key.toLowerCase()==='f'){event.preventDefault();fullscreen();}
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.playing){stop();$('status').textContent='切换页面时已自动暂停。';}});
+  try {setup('communities');} catch(error){$('status').textContent='初始化失败：'+error.message;console.error(error);}
+})();
+</script>
+</body>
+</html>
